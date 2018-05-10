@@ -61,6 +61,8 @@ void draw()
   //popStyle();
   //if(random(1) < 0.001) background(slider_1, slider_2, slider_3);
   
+  if(random(1) < 0.1) background(0);
+  
   if(random(1) < frequency)
   {
     int i = int(random(imageSet.size())); 
@@ -70,17 +72,28 @@ void draw()
     pos_x = int(int(random(0, grid_nx)) * width/grid_nx);
     pos_y = int(int(random(0, grid_ny)) * height/grid_ny);
  
-    if(random(1) < 0.7) blendMode(REPLACE);
-    else blendMode(SUBTRACT);
+    //if(random(1) < 0.7) blendMode(REPLACE);
+    //else blendMode(SUBTRACT);
     //else if (random(1) < 0.8) blendMode(SUBTRACT);
     //else blendMode(DARKEST);
     
     //imageMode(CENTER);   
-    PImage img = imageSet.get(i);
+    //PImage img = imageSet.get(i);
     //float resizeRatio = random(0.2, max_resize_ratio);
     //int img_w = img.width; int img_h = img.height;
     //img.resize(int(img_w * resizeRatio), int(img_w * resizeRatio));
-    displaySegment(img, pos_x, pos_y);
+    //displayRectSegment(img, pos_x, pos_y);
+    
+    
+    int border = 5;
+    int step = 100;
+    int maxIndex = int(random(min(width, height)/step)) + 1;
+    for(int j=0; j < maxIndex; j++)
+    {
+      PImage img = imageSet.get(int(random(imageSet.size())));
+      //PImage img = imageSet.get(int(map(j, 0, maxIndex, 0, imageSet.size())));
+      displayCircSegment(img, j, step, border);
+    }
     //img.resize(img_w, img_h);
   }
   
@@ -119,7 +132,7 @@ void loadImageSet()
 }
 
 // function to extract and display a rectangular segment from the image
-void displaySegment(PImage img, float pos_x, float pos_y)
+void displayRectSegment(PImage img, float pos_x, float pos_y)
 {
   // computing texture coordinates
   float u1, u2, u3, u4;
@@ -152,4 +165,48 @@ void displaySegment(PImage img, float pos_x, float pos_y)
   vertex(pos_x, pos_y + size_y, u4, v4);
   endShape(); 
   popMatrix();
+}
+
+// function to extract and display circular segments from the image
+void displayCircSegment(PImage img, int segIndex, int step, int border)
+{
+  //int maxRad = min(width, height) - border;
+  
+  // creating circular mask according to seg index
+  img.resize(width, height);
+  PGraphics im_mask = createGraphics(img.width, img.height);
+  int ri = (segIndex - 1) * step;
+  int ro = ri + step + border;
+  
+  pushStyle();
+  
+  im_mask.beginDraw();
+  noStroke();
+  im_mask.background(0);
+  im_mask.noStroke();
+  im_mask.fill(255);
+  im_mask.ellipse(im_mask.width/2, im_mask.height/2, ro, ro);
+  im_mask.fill(0);
+  im_mask.ellipse(im_mask.width/2, im_mask.height/2, ri, ri);
+  im_mask.endDraw();
+  
+  
+  // drawing the masked image
+  PGraphics im_draw = createGraphics(img.width, img.height);
+  im_draw.beginDraw();
+  im_draw.noStroke();
+  im_draw.imageMode(CENTER);
+  im_draw.pushMatrix();
+  im_draw.translate(width/2, height/2);
+  im_draw.rotate(frameCount * 0.01);
+  im_draw.image(img, 0, 0);
+  im_draw.blend(im_mask, 0, 0, img.width, img.height, 0, 0, img.width, img.height, MULTIPLY);
+  im_draw.popMatrix();
+  im_draw.endDraw();
+  
+  popStyle();
+  
+  blendMode(LIGHTEST);
+  image(im_draw, 0, 0);
+   
 }
