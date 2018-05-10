@@ -6,7 +6,7 @@ int slider_1, slider_2, slider_3, slider_4;
 float pos_x, pos_y;
 float size_x, size_y;
 float grid_nx, grid_ny;
-float frequency, max_resize_ratio;
+float frequency, max_resize_ratio, rotation;
 
 
 void setup() 
@@ -41,11 +41,11 @@ void setup()
      .setPosition(20,80)
      .setSize(200,20);
      
-   //cp5.addSlider("max_resize_ratio")
-   //  .setRange(0.3,1)
-   //  .setValue(0.5)
-   //  .setPosition(20,110)
-   //  .setSize(200,20);
+   cp5.addSlider("rotation")
+     .setRange(0,PI/2)
+     .setValue(0)
+     .setPosition(20,110)
+     .setSize(200,20);
      
   // setting background
   background(0,0,0);
@@ -70,9 +70,10 @@ void draw()
     pos_x = int(int(random(0, grid_nx)) * width/grid_nx);
     pos_y = int(int(random(0, grid_ny)) * height/grid_ny);
  
-    if(random(1) < 0.3) blendMode(REPLACE);
-    else if (random(1) < 0.8) blendMode(SUBTRACT);
-    else blendMode(DARKEST);
+    if(random(1) < 0.7) blendMode(REPLACE);
+    else blendMode(SUBTRACT);
+    //else if (random(1) < 0.8) blendMode(SUBTRACT);
+    //else blendMode(DARKEST);
     
     //imageMode(CENTER);   
     PImage img = imageSet.get(i);
@@ -94,10 +95,10 @@ void loadImageSet()
   File dir; 
   File[] files;
   
-  dir = new File(dataPath(""));
+  dir = new File(dataPath("textures"));
   files = dir.listFiles();
   
-  //println(dir.getAbsolutePath().toLowerCase());
+  println(dir.getAbsolutePath().toLowerCase());
   
   // loading images
   println("loading images ...");
@@ -110,7 +111,7 @@ void loadImageSet()
     {
       println(path.toLowerCase());
       img = loadImage(path);
-      resizeRatio = random(0.2, 0.5);
+      resizeRatio = random(0.3, 0.7);
       img.resize(int(img.width * resizeRatio), int(img.height * resizeRatio));
       imageSet.add(img);
     }
@@ -128,16 +129,21 @@ void displaySegment(PImage img, float pos_x, float pos_y)
   
   
   size_x = img.width * (1 - ratio_x);
-  size_x = random(size_x/2, 3*size_x/4);
+  size_x = random(size_x/2, size_x);
   size_y = img.height * (1 - ratio_y);
-  size_y = random(size_y/2, 3*size_y/4);
+  size_y = random(size_y/2, size_y);
   
   u1 = ratio_x * img.width; v1 = ratio_y * img.height;
   u2 = u1 + size_x; v2 = v1;
   u3 = u1 + size_x; v3 = v1 + size_y;
   u4 = u1; v4 = v1 + size_y;
   
-  tint(255, random(100, 255));
+  pushMatrix();
+  translate(width/2, height/2);
+  if(random(1) < 0.8) rotate(-rotation);
+  else rotate(rotation);
+  translate(-width/2, -height/2);
+  tint(255, random(150, 255));
   beginShape();
   texture(img);
   vertex(pos_x, pos_y, u1, v1);
@@ -145,4 +151,5 @@ void displaySegment(PImage img, float pos_x, float pos_y)
   vertex(pos_x + size_x, pos_y + size_y, u3, v3);
   vertex(pos_x, pos_y + size_y, u4, v4);
   endShape(); 
+  popMatrix();
 }
