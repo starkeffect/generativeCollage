@@ -1,7 +1,17 @@
+// list of issues/features:
+// 1 - performance issues with cicular segmentation
+// 2 - limiting image sizes to a rectangular grid
+// 2 - saving frames without interface
+// 3 - extra shapes
+// 4 - blend + glitch effects
+// 5 - saving frames on a separate thread
+// 6 - switching segmentation schemes from the interface
+
 import controlP5.*;
 ControlP5 cp5;
 
 ArrayList<PImage> imageSet;
+ArrayList<PImage> frames;
 int slider_1, slider_2, slider_3, slider_4; 
 float pos_x, pos_y;
 float size_x, size_y;
@@ -18,6 +28,9 @@ void setup()
   
   // initializing the image database
   imageSet = new ArrayList<PImage>();
+  
+  // initializing the frames dump
+  frames = new ArrayList<PImage>();
   
   // loading images from the data folder
   loadImageSet();
@@ -72,34 +85,31 @@ void draw()
     pos_x = int(int(random(0, grid_nx)) * width/grid_nx);
     pos_y = int(int(random(0, grid_ny)) * height/grid_ny);
  
-    //if(random(1) < 0.7) blendMode(REPLACE);
-    //else blendMode(SUBTRACT);
+    if(random(1) < 0.7) blendMode(REPLACE);
+    else blendMode(SUBTRACT);
     //else if (random(1) < 0.8) blendMode(SUBTRACT);
     //else blendMode(DARKEST);
     
-    //imageMode(CENTER);   
-    //PImage img = imageSet.get(i);
+    imageMode(CENTER);   
+    PImage img = imageSet.get(i);
     //float resizeRatio = random(0.2, max_resize_ratio);
     //int img_w = img.width; int img_h = img.height;
     //img.resize(int(img_w * resizeRatio), int(img_w * resizeRatio));
-    //displayRectSegment(img, pos_x, pos_y);
-    
-    
-    int border = 5;
-    int step = 100;
-    int maxIndex = int(random(min(width, height)/step)) + 1;
-    for(int j=0; j < maxIndex; j++)
-    {
-      PImage img = imageSet.get(int(random(imageSet.size())));
-      //PImage img = imageSet.get(int(map(j, 0, maxIndex, 0, imageSet.size())));
-      displayCircSegment(img, j, step, border);
-    }
-    //img.resize(img_w, img_h);
+    displayRectSegment(img, pos_x, pos_y);
   }
+  
+  if(random(1) < 0.1) displayShape();
   
   //saveFrame("output/####.tif");
   //println(frameRate);
+  //thread("saveFrames");
   
+}
+
+// function to save individual frames
+void saveFrames()
+{
+  saveFrame("output/####.tif");
 }
 
 // function to load all images from the data folder
@@ -108,7 +118,7 @@ void loadImageSet()
   File dir; 
   File[] files;
   
-  dir = new File(dataPath("textures"));
+  dir = new File(dataPath("bw"));
   files = dir.listFiles();
   
   println(dir.getAbsolutePath().toLowerCase());
@@ -167,46 +177,31 @@ void displayRectSegment(PImage img, float pos_x, float pos_y)
   popMatrix();
 }
 
-// function to extract and display circular segments from the image
-void displayCircSegment(PImage img, int segIndex, int step, int border)
+
+void displayShape()
 {
-  //int maxRad = min(width, height) - border;
+  float cell_size_x, cell_size_y;
+  float pos_x1, pos_x2, pos_y1, pos_y2;
   
-  // creating circular mask according to seg index
-  img.resize(width, height);
-  PGraphics im_mask = createGraphics(img.width, img.height);
-  int ri = (segIndex - 1) * step;
-  int ro = ri + step + border;
+  cell_size_x = width/grid_nx;
+  cell_size_y = height/grid_ny;
+
+  pos_x1 = int(int(random(0, grid_nx)) * cell_size_x) + random(cell_size_x);
+  pos_y1 = int(int(random(0, grid_ny)) * cell_size_y) + random(cell_size_y);
   
+  pos_x2 = int(int(random(0, grid_nx)) * cell_size_x) + random(cell_size_x);
+  pos_y2 = int(int(random(0, grid_ny)) * cell_size_y) + random(cell_size_y);
+  
+  pushMatrix();
+  translate(width/2, height/2);
+  rotate(rotation);
   pushStyle();
-  
-  im_mask.beginDraw();
-  noStroke();
-  im_mask.background(0);
-  im_mask.noStroke();
-  im_mask.fill(255);
-  im_mask.ellipse(im_mask.width/2, im_mask.height/2, ro, ro);
-  im_mask.fill(0);
-  im_mask.ellipse(im_mask.width/2, im_mask.height/2, ri, ri);
-  im_mask.endDraw();
-  
-  
-  // drawing the masked image
-  PGraphics im_draw = createGraphics(img.width, img.height);
-  im_draw.beginDraw();
-  im_draw.noStroke();
-  im_draw.imageMode(CENTER);
-  im_draw.pushMatrix();
-  im_draw.translate(width/2, height/2);
-  im_draw.rotate(frameCount * 0.01);
-  im_draw.image(img, 0, 0);
-  im_draw.blend(im_mask, 0, 0, img.width, img.height, 0, 0, img.width, img.height, MULTIPLY);
-  im_draw.popMatrix();
-  im_draw.endDraw();
-  
+  strokeCap(SQUARE);
+  strokeWeight(random(35));
+  if(random(1) > 0.5) stroke(255);
+  else stroke(0);
+  line(pos_x1, pos_y1, pos_x1 + random(cell_size_x * 2), pos_y1);
+  line(pos_x2, pos_y2, pos_x2, pos_y2 + random(cell_size_y * 2));
   popStyle();
-  
-  blendMode(LIGHTEST);
-  image(im_draw, 0, 0);
-   
+  popMatrix();
 }
