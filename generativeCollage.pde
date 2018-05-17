@@ -10,6 +10,11 @@
 import controlP5.*;
 ControlP5 cp5;
 
+import themidibus.*;
+MidiBus busA; // Midi bus 1
+//MidiBus busB; // Midi bus 2
+
+
 ArrayList<PImage> imageSet;
 ArrayList<PImage> frames;
 int slider_1, slider_2, slider_3, slider_4; 
@@ -17,13 +22,16 @@ float pos_x, pos_y;
 float size_x, size_y;
 float grid_nx, grid_ny;
 float frequency, max_resize_ratio, rotation;
+int transmitChannel;
+Note note;
 
 
 void setup() 
 {
   // initializing the canvas interface
-  size(1024, 768, P2D);
+  //size(1024, 768, P2D);
   noStroke();
+  fullScreen(P2D);
   cp5 = new ControlP5(this);
   
   // initializing the image database
@@ -62,8 +70,11 @@ void setup()
      
   // setting background
   background(0,0,0);
-  //grid_nx = 3; 
-  //grid_ny = 2;
+
+  // setting up Midi output
+  //MidiBus.list();
+  //Create a first new MidiBus attached to the IncommingA Midi input device and the OutgoingA Midi output device. We will name it busA.
+  busA = new MidiBus(this, -1, "toAbleton");
 }
 
 void draw() 
@@ -74,10 +85,20 @@ void draw()
   //popStyle();
   //if(random(1) < 0.001) background(slider_1, slider_2, slider_3);
   
-  if(random(1) < 0.1) background(0);
+  if(random(1) < 0.1) 
+  {
+    transmitChannel = 1;
+    if(random(1) < 0.1) delay(500); 
+    thread("sendMidiTrigger");
+    background(0);
+  }
   
   if(random(1) < frequency)
   {
+    //send midi to ableton
+    transmitChannel = 0;
+    thread("sendMidiTrigger");
+    
     int i = int(random(imageSet.size())); 
     // randomly choosing position on the canvas
     //pos_x = int(random(-width/4, width/4));
@@ -204,4 +225,13 @@ void displayShape()
   line(pos_x2, pos_y2, pos_x2, pos_y2 + random(cell_size_y * 2));
   popStyle();
   popMatrix();
+}
+
+
+void sendMidiTrigger()
+{
+  note = new Note(transmitChannel, int(random(50, 70)), 127);
+  busA.sendNoteOn(note);
+  delay(10);
+  busA.sendNoteOff(note);
 }
